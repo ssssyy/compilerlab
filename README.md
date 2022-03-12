@@ -1,2 +1,3 @@
 # compilerlab
-lv5 finished
+lv7 finished
+but without short-cut evaluation    TAT
