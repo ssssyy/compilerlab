@@ -29,6 +29,17 @@ void Visit(const koopa_raw_program_t &program, std::string &ans)
 void Visit(const koopa_raw_slice_t &slice, std::string &ans)
 {
     //函数名 globl f1, f2部分
+    //cout<<slice.kind<<" "<<slice.len<<endl;
+    if(slice.kind==KOOPA_RSIK_BASIC_BLOCK)
+    {
+        int len = slice.len;
+        for(size_t i = 0; i < len; i++)
+        {
+            auto ptr = slice.buffer[i];
+            const char* bbname = reinterpret_cast<koopa_raw_basic_block_t>(ptr)->name;
+            //cout<<"name: "<<bbname<<endl;
+        }
+    }
     if(slice.kind==KOOPA_RSIK_FUNCTION)
     {
         cout<<"\t.globl ";
@@ -123,9 +134,14 @@ void Visit(const koopa_raw_function_t &func, std::string &ans)
     delete sp_table;
 }
 
+//对每一个基本块打印它的名字
 void Visit(const koopa_raw_basic_block_t &bb, std::string &ans)
 {
     const char* b_name = bb->name;
+    string r_name = string(b_name);
+    r_name = r_name.substr(1,r_name.length()-1)+":";
+    cout<<r_name<<endl;
+    ans+=r_name+"\n";
     auto params = bb->params;
     Visit(bb->insts,ans);
 }
@@ -155,11 +171,77 @@ void Visit(const koopa_raw_value_t &value, std::string &ans)
     case KOOPA_RVT_STORE:   //9
         Visit(value, kind.data.store,ans);
         break;
+    case KOOPA_RVT_JUMP:    //14
+        Visit(kind.data.jump,ans);
+        break;
+    case KOOPA_RVT_BRANCH:  //13
+        Visit(kind.data.branch, ans);
+        break;
     default:
         assert(false);
     }
 }
 
+//处理jump指令
+void Visit(const koopa_raw_jump_t &jump, std::string &ans)
+{
+    //cout<<jump.target->name<<endl;
+    string r_name = string(jump.target->name);
+    r_name = r_name.substr(1,r_name.length()-1);
+    ans+="\tj "+r_name+"\n";
+    cout<<"\tj "<<r_name<<endl;
+}
+
+
+//处理branch指令
+void Visit(const koopa_raw_branch_t &br, std::string &ans)
+{
+    /*
+    cout<<br.true_bb->name<<" ";
+    cout<<br.false_bb->name<<" ";
+    cout<<br.cond->kind.tag<<endl;
+    */
+    string name1,name2;
+    name1 = string(br.true_bb->name);
+    name1 = name1.substr(1,name1.length()-1);
+    name2 = string(br.false_bb->name);
+    name2 = name2.substr(1,name2.length()-1);
+    char str[10];
+    int loc;
+    switch(br.cond->kind.tag)
+    {
+        case KOOPA_RVT_INTEGER:
+        ans+="\tli t0, "+to_string(br.cond->kind.data.integer.value)+"\n";
+        cout<<"\tli t0, "<<br.cond->kind.data.integer.value<<endl;
+        break;
+
+        case KOOPA_RVT_BINARY:
+        sprintf(str,"%p",&br.cond->kind.data.binary);
+        loc = FuncSpTable->Query(string(str));
+        ans+="\tlw t0, "+to_string(loc)+"(sp)\n";
+        cout<<"\tlw t0, "<<loc<<"(sp)"<<endl;
+        break;
+
+        case KOOPA_RVT_LOAD:
+        sprintf(str,"%p",&br.cond->kind.data.load);
+        loc = FuncSpTable->Query(string(str));
+        ans+="\tlw t0, "+to_string(loc)+"(sp)\n";
+        cout<<"\tlw t0, "<<loc<<"(sp)"<<endl;
+        break;
+        
+        default:
+        cout<<br.cond->kind.tag<<endl;
+        assert(false);
+    }
+
+
+    ans+="\tbnez t0, "+name1+"\n";
+    cout<<"\tbnez t0, "<<name1<<endl;
+    ans+="\tj "+name2+"\n";
+    cout<<"\tj "<<name2<<endl;
+}
+
+//处理load指令
 void Visit(const koopa_raw_load_t &load, std::string &ans)
 {
     auto tag = load.src->kind.tag;  //要加载的源的类型，alloc/binary
@@ -219,7 +301,7 @@ void Visit(std::string alloc_name, std::string &ans)
     //FuncSpTable->Print();
 }
 
-string Bi_op_src(koopa_raw_value_t &opr, std::string &ans,int order)
+string Bi_op_src(koopa_raw_value_t &opr, std::string &ans, int order)
 {
     string reg = "";
     auto tag = opr->kind.tag;
@@ -231,7 +313,6 @@ string Bi_op_src(koopa_raw_value_t &opr, std::string &ans,int order)
         if(opr->kind.data.integer.value==0)
         {
             reg = "x0";
-
         }
         else
         {

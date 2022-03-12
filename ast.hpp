@@ -26,7 +26,7 @@ public:
     void genAST(string &ans, stack<string>& aststack, Symtab* symtab) const 
     {
         stack<string> fuzhu;  //辅助栈，用来对后缀表达式求值
-        
+        /*
         stack<string> s1;
         while(!aststack.empty())
         {
@@ -40,7 +40,7 @@ public:
             s1.pop();
         }
         cout<<endl;
-        
+        */
         while(!aststack.empty())
         {
             string val1,val2,val3;
@@ -1688,7 +1688,7 @@ public:
         if(eq_exp!=nullptr)
         {
             eq_exp->Dump(ast);
-            cout<<" "<<eq_op<<" ";
+            //cout<<" "<<eq_op<<" ";
             ast+=" "+eq_op+" ";
             rel_exp->Dump(ast);
         }

@@ -24,5 +24,9 @@ void Visit(const koopa_raw_value_t &value, const koopa_raw_store_t &store, std::
 
 void Visit(std::string alloc_name, std::string &ans);
 
+void Visit(const koopa_raw_jump_t &jump, std::string &ans);
+
+void Visit(const koopa_raw_branch_t &br, std::string &ans);
+
 int Pass1(const koopa_raw_function_t &func);
 
