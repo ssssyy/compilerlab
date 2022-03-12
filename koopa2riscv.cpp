@@ -124,9 +124,18 @@ void Visit(const koopa_raw_function_t &func, std::string &ans)
     int s_size = s.length();
     cout<<s.substr(1,s_size-1)<<":\n";
     ans+=s.substr(1,s_size-1)+":\n";
-    //假设不超过2048字节
-    cout<<"\taddi sp, sp, -"<<sp_space<<endl;
-    ans+="\taddi sp, sp, -"+to_string(sp_space)+"\n";
+    if(sp_space<2048)
+    {
+        cout<<"\taddi sp, sp, -"<<sp_space<<endl;
+        ans+="\taddi sp, sp, -"+to_string(sp_space)+"\n";
+    }
+    else
+    {
+        cout<<"\tli t0, -"<<sp_space<<endl;
+        ans+="\tli t0, -"+to_string(sp_space)+"\n";
+        cout<<"\tadd sp, sp, t0\n";
+        ans+="\tadd sp, sp, t0\n";
+    }
     LocalVarTable *sp_table = new LocalVarTable(s,sp_space);
     FuncSpTable = sp_table;
     auto params = func->params;
@@ -146,7 +155,7 @@ void Visit(const koopa_raw_basic_block_t &bb, std::string &ans)
     Visit(bb->insts,ans);
 }
 
-
+//对每一句的操作进行判断
 void Visit(const koopa_raw_value_t &value, std::string &ans)
 {
     const auto &kind = value->kind;
@@ -234,7 +243,6 @@ void Visit(const koopa_raw_branch_t &br, std::string &ans)
         assert(false);
     }
 
-
     ans+="\tbnez t0, "+name1+"\n";
     cout<<"\tbnez t0, "<<name1<<endl;
     ans+="\tj "+name2+"\n";
@@ -260,8 +268,6 @@ void Visit(const koopa_raw_load_t &load, std::string &ans)
         string addr(str);
         FuncSpTable->Insert(addr,loc2);
     }
-    
-    
 }
 
 //处理store指令

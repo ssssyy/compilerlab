@@ -14,10 +14,15 @@ extern int name_count;
 extern int tpname_count;
 extern int if_count, else_count, then_count, while_count, while_not_count;
 extern int current_while;
+extern int shortcut_count;
+extern int cal_val;
 extern bool ret_in_branch;
 extern bool is_ret_inside;
 extern bool last_ret;
 extern bool inside_if_else;
+extern bool is_in_shortcut;
+extern bool exp_is_const;
+extern string start_name;
 
 class BaseAST{
 public:
@@ -27,7 +32,7 @@ public:
     void genAST(string &ans, stack<string>& aststack, Symtab* symtab) const 
     {
         stack<string> fuzhu;  //辅助栈，用来对后缀表达式求值
-
+        /*
         stack<string> s1;
         while(!aststack.empty())
         {
@@ -41,7 +46,8 @@ public:
             s1.pop();
         }
         cout<<endl;
-
+        */
+        stack<int> valstack;
         while(!aststack.empty())
         {
             string val1,val2,val3;
@@ -97,6 +103,12 @@ public:
                 string tpname = "%"+to_string(tpname_count++);
                 string ts = fuzhu.top();
                 fuzhu.pop();
+                if(exp_is_const)
+                {
+                    int tpn = valstack.top();
+                    valstack.pop();
+                    valstack.push(-tpn);
+                }
                 auto tp = symtab->QueryUp(ts);
                 if(tp==nullptr)
                 {
@@ -119,6 +131,12 @@ public:
                 string tpname = "%"+to_string(tpname_count++);
                 string ts = fuzhu.top();
                 fuzhu.pop();
+                if(exp_is_const)
+                {
+                    int tpn = valstack.top();
+                    valstack.pop();
+                    valstack.push(!tpn);
+                }
                 auto tp = symtab->QueryUp(ts);
                 if(tp==nullptr)
                 {
@@ -141,6 +159,14 @@ public:
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1+tpn2);
+                }
                 auto tp1 = symtab->QueryUp(val2);
                 val3 = fuzhu.top();
                 fuzhu.pop();
@@ -185,6 +211,14 @@ public:
             }
             if(val1=="-")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1-tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -232,6 +266,14 @@ public:
             }
             if(val1=="*")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1*tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -279,6 +321,14 @@ public:
             }
             if(val1=="/")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1/tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -326,6 +376,14 @@ public:
             }
             if(val1=="%")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1%tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -373,6 +431,14 @@ public:
             }
             if(val1=="<")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1<tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -420,6 +486,14 @@ public:
             }
             if(val1==">")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1>tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -467,6 +541,14 @@ public:
             }
             if(val1=="<=")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1<=tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -514,6 +596,14 @@ public:
             }
             if(val1==">=")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1>=tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -561,6 +651,14 @@ public:
             }
             if(val1=="==")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1==tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -608,6 +706,14 @@ public:
             }
             if(val1=="!=")
             {
+                if(exp_is_const)
+                {
+                    int tpn1 = valstack.top();
+                    valstack.pop();
+                    int tpn2 = valstack.top();
+                    valstack.pop();
+                    valstack.push(tpn1!=tpn2);
+                }
                 string tpname = "%"+to_string(tpname_count++);
                 val2 = fuzhu.top();
                 fuzhu.pop();
@@ -653,111 +759,6 @@ public:
                 }
                 continue;
             }
-            if(val1=="&&")  
-            {
-                string tpname = "%"+to_string(tpname_count++);
-                string ttpname = "%"+to_string(tpname_count++);
-                string tttpname = "%"+to_string(tpname_count++);
-                string ttttpname = "%"+to_string(tpname_count++);
-                string tttttpname = "%"+to_string(tpname_count++);
-                val2 = fuzhu.top();
-                fuzhu.pop();
-                auto tp1 = symtab->QueryUp(val2);
-                val3 = fuzhu.top();
-                fuzhu.pop();
-                auto tp2 = symtab->QueryUp(val3);
-                if(tp1==nullptr&&tp2==nullptr)
-                {
-                    ans+="\t"+tpname+" = ne 0, "+val2+"\n";
-                    ans+="\t"+ttpname+" = ne 0, "+val3+"\n";
-                    ans+="\t"+tttpname+" = and "+tpname+", "+ttpname+"\n";
-                    fuzhu.push(tttpname);
-                }
-                else if(tp1!=nullptr&&tp2==nullptr)
-                {
-                    VarEntry* ttp = (VarEntry*) tp1;
-                    string varsym = ttp->var_sym;
-                    ans+="\t"+tpname+" = load "+varsym+"\n";
-                    ans+="\t"+ttpname+" = ne 0, "+tpname+"\n";
-                    ans+="\t"+tttpname+" = ne 0, "+val3+"\n";
-                    ans+="\t"+ttttpname+" = and "+ttpname+", "+tttpname+"\n";
-                    fuzhu.push(ttttpname);
-                }
-                else if(tp2!=nullptr&&tp1==nullptr)
-                {
-                    VarEntry* ttp = (VarEntry*) tp2;
-                    string varsym = ttp->var_sym;
-                    ans+="\t"+tpname+" = load "+varsym+"\n";
-                    ans+="\t"+ttpname+" = ne 0, "+tpname+"\n";
-                    ans+="\t"+tttpname+" = ne 0, "+val2+"\n";
-                    ans+="\t"+ttttpname+" = and "+ttpname+", "+tttpname+"\n";
-                    fuzhu.push(ttttpname);
-                }
-                else
-                {
-                    VarEntry* ttp1 = (VarEntry*) tp1;
-                    string varsym1 = ttp1->var_sym;
-                    ans+="\t"+tpname+" = load "+varsym1+"\n";
-                    VarEntry* ttp2 = (VarEntry*) tp2;
-                    string varsym2 = ttp2->var_sym;
-                    ans+="\t"+ttpname+" = load "+varsym2+"\n";
-                    ans+="\t"+tttpname+" = ne 0, "+tpname+"\n";
-                    ans+="\t"+ttttpname+" = ne 0, "+ttpname+"\n";
-                    ans+="\t"+tttttpname+" = and "+tttpname+", "+ttttpname+"\n";
-                    fuzhu.push(tttttpname);
-                }
-                continue;
-            }
-            if(val1=="||")  
-            {
-                string tpname = "%"+to_string(tpname_count++);
-                string ttpname = "%"+to_string(tpname_count++);
-                string tttpname = "%"+to_string(tpname_count++);
-                string ttttpname = "%"+to_string(tpname_count++);
-                val2 = fuzhu.top();
-                fuzhu.pop();
-                auto tp1 = symtab->QueryUp(val2);
-                val3 = fuzhu.top();
-                fuzhu.pop();
-                auto tp2 = symtab->QueryUp(val3);
-                if(tp1==nullptr&&tp2==nullptr)
-                {
-                    ans+="\t"+tpname+" = or "+val2+", "+val3+"\n";
-                    ans+="\t"+ttpname+" = ne 0, "+tpname+"\n";
-                    fuzhu.push(ttpname);
-                }
-                else if(tp1!=nullptr&&tp2==nullptr)
-                {
-                    VarEntry* ttp = (VarEntry*) tp1;
-                    string varsym = ttp->var_sym;
-                    ans+="\t"+tpname+" = load "+varsym+"\n";
-                    ans+="\t"+ttpname+" = or "+tpname+", "+val3+"\n";
-                    ans+="\t"+tttpname+" = ne 0, "+ttpname+"\n";
-                    fuzhu.push(tttpname);
-                }
-                else if(tp2!=nullptr&&tp1==nullptr)
-                {
-                    VarEntry* ttp = (VarEntry*) tp2;
-                    string varsym = ttp->var_sym;
-                    ans+="\t"+tpname+" = load "+varsym+"\n";
-                    ans+="\t"+ttpname+" = or "+val2+", "+tpname+"\n";
-                    ans+="\t"+tttpname+" = ne 0, "+ttpname+"\n";
-                    fuzhu.push(tttpname);
-                }
-                else
-                {
-                    VarEntry* ttp1 = (VarEntry*) tp1;
-                    string varsym1 = ttp1->var_sym;
-                    ans+="\t"+tpname+" = load "+varsym1+"\n";
-                    VarEntry* ttp2 = (VarEntry*) tp2;
-                    string varsym2 = ttp2->var_sym;
-                    ans+="\t"+ttpname+" = load "+varsym2+"\n";
-                    ans+="\t"+tttpname+" = or "+tpname+", "+ttpname+"\n";
-                    ans+="\t"+ttttpname+" = ne 0, "+tttpname+"\n";
-                    fuzhu.push(ttttpname);
-                }
-                continue;
-            }
             if(val1=="=")
             {
                 string rhs = fuzhu.top();
@@ -771,16 +772,29 @@ public:
                     exit(1);
                 }
                 VarEntry* ttp = (VarEntry*)tp;
-                ans+="\tstore "+rhs+", "+ttp->var_sym+"\n";
+                auto tp2 = symtab->Query(rhs);
+                if(tp2==nullptr)
+                {
+                    ans+="\tstore "+rhs+", "+ttp->var_sym+"\n";
+                }
+                else
+                {
+                    VarEntry* ttp2 = (VarEntry*)tp2;
+                    string tpname = "\%"+to_string(tpname_count++);
+                    ans+="\t"+tpname+" = load "+ttp2->var_sym+"\n";
+                    ans+="\tstore "+tpname+", "+ttp->var_sym+"\n";
+                }   
                 continue;
             }
-            fuzhu.push(val1);    
+            fuzhu.push(val1);
+            if(exp_is_const) valstack.push(atoi(val1.c_str()));
         }
         if(!fuzhu.empty())
         {
             aststack.push(fuzhu.top());
             fuzhu.pop();
         }
+        if(exp_is_const) cal_val = valstack.top();
     }
 };
 
@@ -1053,12 +1067,15 @@ public:
     void dfs(string& ans, stack<string>& aststack,Symtab* symtab) const override{
         //添加符号表的操作，需要在constdefast里面进行符号表操作，并写出编译求值函数
         //cout<<"Const Def"<<endl;
+        exp_is_const = true;
+        cal_val = 0;
         const_init_val->dfs(ans,aststack,symtab);
         //TBC
-        int const_val = cal(aststack);
+        int const_val = cal(aststack,symtab);
         symtab->InsertConst(ident,const_val);
+        exp_is_const = false;
     }
-    int cal(stack<string>& aststack) const
+    int cal(stack<string>& aststack,Symtab* symtab) const
     {
         //栈里面有+-!, +-*/%, 六个关系比较，|| &&
         //遇到操作符就弹出1/2个ans_stack里的数进行运算
@@ -1200,9 +1217,17 @@ public:
                 ans_stack.pop();
                 ans_stack.push(tn1||tn2);
             }
-            else    //数字，转换一下后存储
+            else if(tp[0]>='0'&&tp[0]<='9')    //数字，转换一下后存储
             {
                 ans_stack.push(atoi(tp.c_str()));
+            }
+            else
+            {
+                auto tpp = symtab->QueryUp(tp);
+                string tpname = "%"+to_string(tpname_count++);
+                VarEntry* ttp = (VarEntry*) tpp;
+                int val = ttp->val;
+                ans_stack.push(val);
             }
         }
         return ans_stack.top();
@@ -1680,10 +1705,79 @@ public:
     void dfs(string& ans, stack<string>& aststack,Symtab* symtab) const override{
         if(lor_exp!=nullptr)
         {
-            aststack.push("||");
-            //cout<<"||"<<" ";
+            bool flag = false;
+            if(is_in_shortcut==false)
+            {
+                flag = true;
+                is_in_shortcut = true;
+                start_name = "\%tp_then_"+to_string(shortcut_count);
+            }
+            string result_name = "result_"+to_string(shortcut_count);
+            string if_name = "\%tp_if_"+to_string(shortcut_count);
+            string then_name = "\%tp_then_"+to_string(shortcut_count++);
+            symtab->InsertVar(result_name,"@"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no));
+            ans+="\t@"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+" = alloc i32\n";
+            ans+="\tstore 1, @"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+"\n";
+            stack<string> fuzhu;    //存一下当前栈里有的东西，然后算完短路求值以后再塞回去
+            while(!aststack.empty())
+            {
+                fuzhu.push(aststack.top());
+                aststack.pop();
+            }
+
+            aststack.push("==");
             lor_exp->dfs(ans,aststack,symtab);
+            aststack.push("0");
+            genAST(ans,aststack,symtab);
+            string r_name = aststack.top();
+            aststack.pop();
+            if(r_name[0]=='%'||isdigit(r_name[0]))
+            {
+                ans+="\tbr "+r_name+", "+if_name+", "+start_name+"\n";
+            }
+            else
+            { 
+                auto tp = symtab->QueryUp(r_name);
+                VarEntry* ttp = (VarEntry*)tp;
+                string varsym = ttp->var_sym;
+                string tpname = to_string(tpname_count++);
+                ans+="\t%"+tpname+" = load "+varsym+"\n";
+                ans+="\tbr %"+tpname+", "+if_name+", "+start_name+"\n";
+            }
+            ans+=if_name+":\n";
+
+            aststack.push("!=");
             land_exp->dfs(ans,aststack,symtab);
+            aststack.push("0");
+            genAST(ans,aststack,symtab);
+            r_name = aststack.top();
+            aststack.pop();
+            auto tp = symtab->QueryUp(r_name);
+            if(tp==nullptr)
+            {
+                ans+="\tstore "+r_name+", @"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+"\n";
+                ans+="\tjump "+then_name+"\n";     
+            }
+            else    //符号名 需要load以后再返回
+            {
+                string tpname = "%"+to_string(tpname_count++);
+                VarEntry* ttp = (VarEntry*) tp;
+                string varsym = ttp->var_sym;
+                ans+="\t"+tpname+" = load "+varsym+"\n";
+                ans+="\tstore "+tpname+", @"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+"\n";
+                ans+="\tjump "+then_name+"\n";
+            }
+            ans+=then_name+":\n";
+
+            while(!fuzhu.empty())
+            {
+                aststack.push(fuzhu.top());
+                fuzhu.pop();
+            }
+            if(exp_is_const==false) aststack.push(result_name);
+            else aststack.push(to_string(cal_val));
+            //symtab->Print();
+            if(flag) is_in_shortcut = false;
         }
         else
         {
@@ -1714,10 +1808,79 @@ public:
     void dfs(string& ans, stack<string>& aststack,Symtab* symtab) const override{
         if(land_exp!=nullptr)
         {
-            aststack.push("&&");
-            //cout<<"&&"<<" ";
+            bool flag = false;
+            if(is_in_shortcut==false)
+            {
+                flag = true;
+                is_in_shortcut = true;
+                start_name = "\%tp_then_"+to_string(shortcut_count);
+            }
+            string result_name = "result_"+to_string(shortcut_count);
+            string if_name = "\%tp_if_"+to_string(shortcut_count);
+            string then_name = "\%tp_then_"+to_string(shortcut_count++);
+            symtab->InsertVar(result_name,"@"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no));
+            ans+="\t@"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+" = alloc i32\n";
+            ans+="\tstore 0, @"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+"\n";
+            stack<string> fuzhu;    //存一下当前栈里有的东西，然后算完短路求值以后再塞回去
+            while(!aststack.empty())
+            {
+                fuzhu.push(aststack.top());
+                aststack.pop();
+            }
+
+            aststack.push("!=");
             land_exp->dfs(ans,aststack,symtab);
+            aststack.push("0");
+            genAST(ans,aststack,symtab);
+            string r_name = aststack.top();
+            aststack.pop();
+            if(r_name[0]=='%'||isdigit(r_name[0]))
+            {
+                ans+="\tbr "+r_name+", "+if_name+", "+start_name+"\n";
+            }
+            else
+            { 
+                auto tp = symtab->QueryUp(r_name);
+                VarEntry* ttp = (VarEntry*)tp;
+                string varsym = ttp->var_sym;
+                string tpname = to_string(tpname_count++);
+                ans+="\t%"+tpname+" = load "+varsym+"\n";
+                ans+="\tbr %"+tpname+", "+if_name+", "+start_name+"\n";
+            }
+            ans+=if_name+":\n";
+
+            aststack.push("!=");
             eq_exp->dfs(ans,aststack,symtab);
+            aststack.push("0");
+            genAST(ans,aststack,symtab);
+            r_name = aststack.top();
+            aststack.pop();
+            auto tp = symtab->QueryUp(r_name);
+            if(tp==nullptr)
+            {
+                ans+="\tstore "+r_name+", @"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+"\n";
+                ans+="\tjump "+then_name+"\n";     
+            }
+            else    //符号名 需要load以后再返回
+            {
+                string tpname = "%"+to_string(tpname_count++);
+                VarEntry* ttp = (VarEntry*) tp;
+                string varsym = ttp->var_sym;
+                ans+="\t"+tpname+" = load "+varsym+"\n";
+                ans+="\tstore "+tpname+", @"+result_name+"_"+to_string(symtab->layer)+"_"+to_string(symtab->child_no)+"\n";
+                ans+="\tjump "+then_name+"\n";
+            }
+            ans+=then_name+":\n";
+
+            while(!fuzhu.empty())
+            {
+                aststack.push(fuzhu.top());
+                fuzhu.pop();
+            }
+            if(exp_is_const==false) aststack.push(result_name);
+            else aststack.push(to_string(cal_val));
+            //symtab->Print();
+            if(flag) is_in_shortcut = false;
         }
         else
         {

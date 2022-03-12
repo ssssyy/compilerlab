@@ -25,10 +25,15 @@ int then_count = 0;
 int while_count = 0;
 int while_not_count = 0;
 int current_while = -1;
+int shortcut_count = 0;
+int cal_val = 0;
+bool is_in_shortcut = false;
 bool ret_in_branch = false;
 bool is_ret_inside = false;
 bool last_ret = false;
 bool inside_if_else = false;
+bool exp_is_const = false;
+string start_name;
 
 // 声明 lexer 的输入, 以及 parser 函数
 // 为什么不引用 sysy.tab.hpp 呢? 因为首先里面没有 yyin 的定义

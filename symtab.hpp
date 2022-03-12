@@ -13,9 +13,10 @@ class SymtabEntry{
 public:
     string sym_name;    //符号名
     int ty;         //ty==0为常量，ty==1为变量，ty==2为函数
-    SymtabEntry():sym_name(""),ty(-1){}
-    SymtabEntry(int type_):sym_name(""),ty(type_){}
-    SymtabEntry(string name_, int type_):sym_name(name_),ty(type_){}
+    int val;        //暂时只在用于为常量初始化时使用
+    SymtabEntry():sym_name(""),ty(-1),val(0){}
+    SymtabEntry(int type_):sym_name(""),ty(type_),val(0){}
+    SymtabEntry(string name_, int type_):sym_name(name_),ty(type_),val(0){}
     virtual ~SymtabEntry(){}
 };
 
