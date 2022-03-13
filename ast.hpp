@@ -22,7 +22,9 @@ extern bool last_ret;
 extern bool inside_if_else;
 extern bool is_in_shortcut;
 extern bool exp_is_const;
-extern string start_name;
+extern bool in_and;
+extern stack<string> and_stack;
+extern stack<string> or_stack;
 
 class BaseAST{
 public:
@@ -1706,11 +1708,23 @@ public:
         if(lor_exp!=nullptr)
         {
             bool flag = false;
+            bool flag2 = false;
             if(is_in_shortcut==false)
             {
+                //cout<<"or1"<<endl;
                 flag = true;
+                in_and = false;
                 is_in_shortcut = true;
-                start_name = "\%tp_then_"+to_string(shortcut_count);
+                string start_name = "\%tp_then_"+to_string(shortcut_count);
+                or_stack.push(start_name);
+            }
+            else if(in_and==true)
+            {
+                //cout<<"or2"<<endl;
+                flag2 = true;
+                in_and = false;
+                string tpname = "\%tp_then_"+to_string(shortcut_count);
+                or_stack.push(tpname);
             }
             string result_name = "result_"+to_string(shortcut_count);
             string if_name = "\%tp_if_"+to_string(shortcut_count);
@@ -1731,9 +1745,10 @@ public:
             genAST(ans,aststack,symtab);
             string r_name = aststack.top();
             aststack.pop();
+            //cout<<"Orsize: "<<or_stack.size()<<endl;
             if(r_name[0]=='%'||isdigit(r_name[0]))
             {
-                ans+="\tbr "+r_name+", "+if_name+", "+start_name+"\n";
+                ans+="\tbr "+r_name+", "+if_name+", "+or_stack.top()+"\n";
             }
             else
             { 
@@ -1742,7 +1757,7 @@ public:
                 string varsym = ttp->var_sym;
                 string tpname = to_string(tpname_count++);
                 ans+="\t%"+tpname+" = load "+varsym+"\n";
-                ans+="\tbr %"+tpname+", "+if_name+", "+start_name+"\n";
+                ans+="\tbr %"+tpname+", "+if_name+", "+or_stack.top()+"\n";
             }
             ans+=if_name+":\n";
 
@@ -1774,10 +1789,19 @@ public:
                 aststack.push(fuzhu.top());
                 fuzhu.pop();
             }
+            if(flag2)
+            {
+                or_stack.pop();
+                in_and = true;
+            }
             if(exp_is_const==false) aststack.push(result_name);
             else aststack.push(to_string(cal_val));
             //symtab->Print();
-            if(flag) is_in_shortcut = false;
+            if(flag)
+            {
+                is_in_shortcut = false;
+                or_stack.pop();
+            }
         }
         else
         {
@@ -1809,11 +1833,23 @@ public:
         if(land_exp!=nullptr)
         {
             bool flag = false;
+            bool flag2 = false;
             if(is_in_shortcut==false)
             {
+                //cout<<"and1"<<endl;
                 flag = true;
+                in_and =true;
                 is_in_shortcut = true;
-                start_name = "\%tp_then_"+to_string(shortcut_count);
+                string start_name = "\%tp_then_"+to_string(shortcut_count);
+                and_stack.push(start_name);
+            }
+            else if(in_and==false)
+            {
+                //cout<<"and2"<<endl;
+                flag2 = true;
+                in_and = true;
+                string tpname = "\%tp_then_"+to_string(shortcut_count);
+                and_stack.push(tpname);
             }
             string result_name = "result_"+to_string(shortcut_count);
             string if_name = "\%tp_if_"+to_string(shortcut_count);
@@ -1834,9 +1870,10 @@ public:
             genAST(ans,aststack,symtab);
             string r_name = aststack.top();
             aststack.pop();
+            //cout<<"Andsize: "<<and_stack.size()<<endl;
             if(r_name[0]=='%'||isdigit(r_name[0]))
             {
-                ans+="\tbr "+r_name+", "+if_name+", "+start_name+"\n";
+                ans+="\tbr "+r_name+", "+if_name+", "+and_stack.top()+"\n";
             }
             else
             { 
@@ -1845,7 +1882,7 @@ public:
                 string varsym = ttp->var_sym;
                 string tpname = to_string(tpname_count++);
                 ans+="\t%"+tpname+" = load "+varsym+"\n";
-                ans+="\tbr %"+tpname+", "+if_name+", "+start_name+"\n";
+                ans+="\tbr %"+tpname+", "+if_name+", "+and_stack.top()+"\n";
             }
             ans+=if_name+":\n";
 
@@ -1877,10 +1914,19 @@ public:
                 aststack.push(fuzhu.top());
                 fuzhu.pop();
             }
+            if(flag2)
+            {
+                and_stack.pop();
+                in_and = false;
+            }
             if(exp_is_const==false) aststack.push(result_name);
             else aststack.push(to_string(cal_val));
             //symtab->Print();
-            if(flag) is_in_shortcut = false;
+            if(flag)
+            {
+                is_in_shortcut = false;
+                and_stack.pop();
+            }
         }
         else
         {

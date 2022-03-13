@@ -33,7 +33,9 @@ bool is_ret_inside = false;
 bool last_ret = false;
 bool inside_if_else = false;
 bool exp_is_const = false;
-string start_name;
+bool in_and = false;    //在&&里时是true，在||里时是false
+stack<string> and_stack;
+stack<string> or_stack;
 
 // 声明 lexer 的输入, 以及 parser 函数
 // 为什么不引用 sysy.tab.hpp 呢? 因为首先里面没有 yyin 的定义
