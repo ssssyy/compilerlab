@@ -1,0 +1,28 @@
+fun @main(): i32{
+%e0:
+	%ret = alloc i32
+	jump %mystart
+%mystart:
+	@x_1_0 = alloc i32
+	store 1, @x_1_0
+	%0 = add 1, 2
+	%1 = add %0, 3
+	%2 = ne %1, 0
+	br %2, %if_0, %if_0_if
+%if_0_if:
+	%3 = add 3, 4
+	%4 = add %3, 5
+	%5 = ne %4, 0
+	br %2, %if_0, %then_0
+%if_0:
+	store 1, %ret
+	jump %end
+%then_0:
+	store 2, %ret
+	jump %end
+%e1:
+	jump %end
+%end:
+	%6 = load %ret
+	ret %6
+}
